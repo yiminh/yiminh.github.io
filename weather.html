@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>State College Weather</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js for graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js for graph -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -15,55 +15,73 @@
             height: 1264px;
             margin: 0;
             padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .weather-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 1400px;
+        }
+        .weather-block {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 10px;
+            width: 80%;
+            text-align: center;
+            font-size: 2em;
+            border-radius: 10px;
         }
         .weather-symbol {
-            width: 100px;
-            height: 100px;
+            width: 150px;
+            height: 150px;
         }
         .chart-container {
-            width: 800px;
-            height: 400px;
-            margin: auto;
-        }
-        .footer {
+            width: 1400px;
+            height: 500px;
+            background: #ddd;
+            padding: 20px;
+            border-radius: 10px;
             margin-top: 20px;
-            font-size: 0.8em;
+        }
+        .update-time {
+            font-size: 1.5em;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-    <h1>State College, PA Weather</h1>
-    
-    <div id="weather-container">
+    <h1 style="font-size: 3em; margin-bottom: 20px;">State College, PA Weather</h1>
+
+    <div class="weather-container">
+        <!-- Date & Temperature -->
+        <div class="weather-block" id="temperature"></div>
+
+        <!-- Precipitation & UV Index -->
+        <div class="weather-block" id="precipitation"></div>
+
+        <!-- Weather Icon -->
         <img id="weather-icon" class="weather-symbol" src="" alt="Weather Icon">
-        <p id="temperature">Loading...</p>
-        <p id="precipitation"></p>
-        <p id="uv-index"></p>
-        <p id="humidity"></p>
-        <p id="lunar-date"></p>
-        <p id="update-time"></p>
+
+        <!-- Last Updated Time -->
+        <div class="update-time" id="update-time"></div>
     </div>
 
+    <!-- Chart -->
     <div class="chart-container">
         <canvas id="weatherChart"></canvas>
     </div>
 
     <script>
-        console.log("JavaScript is running...");
-
         async function fetchWeather() {
             console.log("Fetching weather data...");
-
-            const url = "https://api.open-meteo.com/v1/forecast?latitude=40.7934&longitude=-77.8600&hourly=temperature_2m,precipitation_probability&daily=precipitation_sum,temperature_2m_max,temperature_2m_min,uv_index_max&timezone=America/New_York";
+            const url = "https://api.open-meteo.com/v1/forecast?latitude=40.7934&longitude=-77.8600&hourly=temperature_2m,precipitation_probability&daily=precipitation_sum,temperature_2m_max,temperature_2m_min,uv_index_max,weathercode&timezone=America/New_York";
             
             try {
                 const response = await fetch(url);
-                console.log("API Response Status:", response.status);
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-
                 const data = await response.json();
                 console.log("API Response Data:", data);
 
@@ -72,26 +90,81 @@
                     return;
                 }
 
-                // Extract today's and tomorrow's data
-                const todayTempMax = data.daily.temperature_2m_max[0] || "N/A";
-                const todayTempMin = data.daily.temperature_2m_min[0] || "N/A";
-                const tomorrowTempMax = data.daily.temperature_2m_max[1] || "N/A";
-                const tomorrowTempMin = data.daily.temperature_2m_min[1] || "N/A";
-                const precipitation = data.daily.precipitation_sum[0] || "N/A";
-                const uvIndex = data.daily.uv_index_max[0] || "N/A";
+                // Convert date
+                const today = new Date();
+                const dateStr = today.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-                // Update HTML
-                document.getElementById("temperature").innerHTML = `Today: ${todayTempMax}°C / ${todayTempMin}°C | Tomorrow: ${tomorrowTempMax}°C / ${tomorrowTempMin}°C`;
-                document.getElementById("precipitation").innerHTML = `Precipitation: ${precipitation} mm`;
-                document.getElementById("uv-index").innerHTML = `UV Index: ${uvIndex}`;
+                // Extract weather data
+                const todayTempMax = data.daily.temperature_2m_max[0].toFixed(1);
+                const todayTempMin = data.daily.temperature_2m_min[0].toFixed(1);
+                const precipitation = data.daily.precipitation_sum[0];
+                const uvIndex = data.daily.uv_index_max[0];
+                const weatherCode = data.daily.weathercode[0]; // Weather condition code
+
+                // Convert Celsius to Fahrenheit
+                const todayTempMaxF = (todayTempMax * 9/5 + 32).toFixed(1);
+                const todayTempMinF = (todayTempMin * 9/5 + 32).toFixed(1);
+
+                // Set Weather Icon
+                let weatherIcon = "clear.png"; // Default
+                if (weatherCode >= 1 && weatherCode <= 3) weatherIcon = "cloud.png";
+                if (weatherCode >= 45 && weatherCode <= 48) weatherIcon = "fog.png";
+                if (weatherCode >= 51 && weatherCode <= 55) weatherIcon = "drizzle.png";
+                if (weatherCode >= 61 && weatherCode <= 65) weatherIcon = "rain.png";
+                if (weatherCode >= 71 && weatherCode <= 75) weatherIcon = "snow.png";
+                if (weatherCode >= 95) weatherIcon = "storm.png";
+
+                document.getElementById("weather-icon").src = `icons/${weatherIcon}`;
+
+                // Update Blocks
+                document.getElementById("temperature").innerHTML = `${dateStr} <br> 🌡 ${todayTempMax}°C / ${todayTempMaxF}°F <br> 🔥 ${todayTempMin}°C / ${todayTempMinF}°F`;
+                document.getElementById("precipitation").innerHTML = `☔ Precipitation: ${precipitation} mm <br> 🌞 UV Index: ${uvIndex}`;
                 document.getElementById("update-time").innerHTML = `Last Updated: ${new Date().toLocaleTimeString()}`;
 
+                // Update Chart
+                updateChart(data.hourly.temperature_2m, data.hourly.precipitation_probability);
             } catch (error) {
                 console.error("Error fetching weather data:", error);
             }
         }
 
+        function updateChart(temperatureData, precipitationData) {
+            const ctx = document.getElementById('weatherChart').getContext('2d');
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                    datasets: [
+                        {
+                            label: "Temperature (°C)",
+                            type: "line",
+                            data: temperatureData.slice(0, 24),
+                            borderColor: "blue",
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            fill: false
+                        },
+                        {
+                            label: "Rain Probability (%)",
+                            type: "bar",
+                            data: precipitationData.slice(0, 24),
+                            backgroundColor: "gray"
+                        }
+                    ]
+                },
+                options: {
+                    responsive: false,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // Run Fetch on Load
         fetchWeather();
+        setInterval(fetchWeather, 3600000); // Refresh every hour
     </script>
 </body>
 </html>
