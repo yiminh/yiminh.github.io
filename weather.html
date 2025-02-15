@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>State College Weather</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js for plotting -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #FFFFFF;
+            color: #000000;
+            text-align: center;
+            width: 1680px;
+            height: 1264px;
+            margin: 0;
+            padding: 20px;
+        }
+        .weather-symbol {
+            width: 100px;
+            height: 100px;
+        }
+        .chart-container {
+            width: 800px;
+            height: 400px;
+            margin: auto;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <h1>State College, PA Weather</h1>
+    
+    <div id="weather-container">
+        <img id="weather-icon" class="weather-symbol" src="" alt="Weather Icon">
+        <p id="temperature"></p>
+        <p id="precipitation"></p>
+        <p id="uv-index"></p>
+        <p id="humidity"></p>
+        <p id="lunar-date"></p>
+        <p id="update-time"></p>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="weatherChart"></canvas>
+    </div>
+
+    <script>
+        async function fetchWeather() {
+            const url = "https://api.open-meteo.com/v1/forecast?latitude=40.7934&longitude=-77.8600&hourly=temperature_2m,precipitation_probability&daily=precipitation_sum,temperature_2m_max,temperature_2m_min,uv_index_max&timezone=America/New_York";
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                // Extract today's and tomorrow's data
+                const todayTempMax = data.daily.temperature_2m_max[0];
+                const todayTempMin = data.daily.temperature_2m_min[0];
+                const tomorrowTempMax = data.daily.temperature_2m_max[1];
+                const tomorrowTempMin = data.daily.temperature_2m_min[1];
+                const precipitation = data.daily.precipitation_sum[0];
+                const uvIndex = data.daily.uv_index_max[0];
+
+                // Update HTML
+                document.getElementById("temperature").innerHTML = `Today: ${todayTempMax}°C / ${todayTempMin}°C | Tomorrow: ${tomorrowTempMax}°C / ${tomorrowTempMin}°C`;
+                document.getElementById("precipitation").innerHTML = `Precipitation: ${precipitation} mm`;
+                document.getElementById("uv-index").innerHTML = `UV Index: ${uvIndex}`;
+                document.getElementById("update-time").innerHTML = `Last Updated: ${new Date().toLocaleTimeString()}`;
+
+                // Update Chart
+                updateChart(data.hourly.temperature_2m, data.hourly.precipitation_probability);
+            } catch (error) {
+                console.error("Error fetching weather data:", error);
+            }
+        }
+
+        function updateChart(temperatureData, precipitationData) {
+            const ctx = document.getElementById('weatherChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => i + ":00"),
+                    datasets: [
+                        {
+                            label: "Temperature (°C)",
+                            type: "line",
+                            data: temperatureData.slice(0, 24),
+                            borderColor: "blue",
+                            fill: false
+                        },
+                        {
+                            label: "Rain Probability (%)",
+                            type: "bar",
+                            data: precipitationData.slice(0, 24),
+                            backgroundColor: "gray"
+                        }
+                    ]
+                },
+                options: {
+                    responsive: false,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // Update every hour
+        setTimeout(function(){
+            location.reload();
+        }, 3600000); // Reload every hour
+    </script>
+</body>
+</html>
