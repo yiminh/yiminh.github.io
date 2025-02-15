@@ -20,7 +20,7 @@
             align-items: center;
         }
         h1 {
-            font-size: 120px;
+            font-size: 60px;
             margin: 10px 0;
             height: 8%;
         }
@@ -36,17 +36,17 @@
         }
         .weather-block {
             background: #f5f5f5;
-            padding: 30px;
+            padding: 15px;
             text-align: center;
-            font-size: 80px;
+            font-size: 40px;
             border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         .weather-icon {
-            width: 350px;
-            height: 350px;
+            width: 250px;
+            height: 250px;
             background: #f5f5f5;
             border-radius: 10px;
             display: flex;
@@ -63,7 +63,7 @@
         }
         .update-time {
             grid-column: span 4;
-            font-size: 50px;
+            font-size: 30px;
             margin-top: 10px;
         }
     </style>
@@ -74,9 +74,9 @@
     <div class="weather-container">
         <!-- Today & Tomorrow Weather Blocks -->
         <div class="weather-block" id="weather-today"></div>
-        <div class="weather-icon"><img id="weather-icon-today" src="" width="250"></div>
+        <div class="weather-icon"><img id="weather-icon-today" src="" width="200"></div>
         <div class="weather-block" id="weather-tomorrow"></div>
-        <div class="weather-icon"><img id="weather-icon-tomorrow" src="" width="250"></div>
+        <div class="weather-icon"><img id="weather-icon-tomorrow" src="" width="200"></div>
 
         <!-- Weather Info Blocks -->
         <div class="weather-block" id="precipitation"></div>
@@ -107,7 +107,6 @@
                     return;
                 }
 
-                // Convert date
                 const today = new Date();
                 const dateStr = today.toISOString().split("T")[0].replace(/-/g, ".");
 
@@ -118,30 +117,12 @@
                 const tomorrowTempMin = data.daily.temperature_2m_min[1].toFixed(1);
                 const precipitation = data.daily.precipitation_sum[0];
                 const uvIndex = data.daily.uv_index_max[0];
-                const humidity = Math.round(Math.random() * 50 + 30); // Mock humidity (not available in API)
+                const humidity = Math.round(Math.random() * 50 + 30);
                 const todayWeatherCode = data.daily.weathercode[0];
                 const tomorrowWeatherCode = data.daily.weathercode[1];
 
-                // Weather Icons
-                const weatherIcons = {
-                    "clear.png": [0],
-                    "cloud.png": [1, 2, 3],
-                    "fog.png": [45, 48],
-                    "drizzle.png": [51, 53, 55],
-                    "rain.png": [61, 63, 65],
-                    "snow.png": [71, 73, 75, 77],
-                    "storm.png": [95, 96, 99]
-                };
-
-                function getWeatherIcon(code) {
-                    for (const [icon, codes] of Object.entries(weatherIcons)) {
-                        if (codes.includes(code)) return `icons/${icon}`;
-                    }
-                    return "icons/clear.png";
-                }
-
-                document.getElementById("weather-icon-today").src = getWeatherIcon(todayWeatherCode);
-                document.getElementById("weather-icon-tomorrow").src = getWeatherIcon(tomorrowWeatherCode);
+                document.getElementById("weather-icon-today").src = `icons/${todayWeatherCode}.png`;
+                document.getElementById("weather-icon-tomorrow").src = `icons/${tomorrowWeatherCode}.png`;
 
                 document.getElementById("weather-today").innerHTML = `
                     ${dateStr} <br> 
@@ -168,8 +149,8 @@
                 type: "bar",
                 data: { labels: Array.from({length: 24}, (_, i) => `${i}:00`),
                     datasets: [
-                        { label: "", type: "line", yAxisID: "temp-axis", data: temperatureData.slice(0, 24), borderColor: "blue", borderWidth: 4, fill: false },
-                        { label: "", type: "bar", yAxisID: "rain-axis", data: precipitationData.slice(0, 24), backgroundColor: "gray" }
+                        { type: "line", yAxisID: "temp-axis", data: temperatureData.slice(0, 24), borderColor: "blue", borderWidth: 4, fill: false },
+                        { type: "bar", yAxisID: "rain-axis", data: precipitationData.slice(0, 24), backgroundColor: "gray" }
                     ]
                 },
                 options: { responsive: false, scales: { "temp-axis": { position: "right" }, "rain-axis": { position: "left" } } }
