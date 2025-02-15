@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=1680, height=1264, initial-scale=1.0">
     <title>State College</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -14,30 +14,30 @@
             width: 1680px;
             height: 1264px;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
         h1 {
-            font-size: 120px; /* Extra-large title */
-            margin-bottom: 30px;
+            font-size: 120px;
+            margin: 10px 0;
         }
         .weather-container {
             display: flex;
             flex-direction: column;
-            width: 90%;
-            max-width: 1600px;
+            width: 100%;
+            max-width: 1680px;
         }
         .weather-row {
             display: flex;
             justify-content: space-between;
             width: 100%;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
         .weather-block {
             background: #f5f5f5;
-            padding: 50px;
+            padding: 40px;
             flex: 1;
             text-align: center;
             font-size: 80px;
@@ -45,34 +45,39 @@
             margin: 10px;
         }
         .weather-symbol {
-            width: 300px;
-            height: 300px;
+            width: 350px;
+            height: 350px;
         }
         .chart-container {
-            width: 80%;
-            height: 750px;
+            width: 70%;
+            height: 800px;
             background: #ddd;
-            padding: 20px;
+            padding: 10px;
             border-radius: 10px;
         }
         .update-time {
-            font-size: 60px;
-            margin-top: 40px;
+            font-size: 50px;
+            margin-top: 30px;
         }
     </style>
 </head>
 <body>
     <h1>State College</h1>
 
-    <!-- Weather Today & Tomorrow -->
+    <!-- Weather Today + Tomorrow -->
     <div class="weather-row">
         <div class="weather-block" id="weather-today"></div>
         <div class="weather-block" id="weather-tomorrow"></div>
     </div>
 
-    <!-- Other Weather Info + Huge Chart -->
+    <!-- Today's Weather Icon -->
+    <div id="weather-icon-container">
+        <img id="weather-icon" class="weather-symbol" src="" alt="Weather Icon">
+    </div>
+
+    <!-- Other Info + Giant Chart -->
     <div class="weather-row">
-        <div style="width: 35%; text-align: left; font-size: 60px;">
+        <div style="width: 30%; text-align: left; font-size: 60px;">
             <p id="precipitation"></p>
             <p id="uv-index"></p>
             <p id="humidity"></p>
@@ -127,19 +132,20 @@
                 if (weatherCode >= 71 && weatherCode <= 75) weatherIcon = "snow.png";
                 if (weatherCode >= 95) weatherIcon = "storm.png";
 
+                document.getElementById("weather-icon").src = `icons/${weatherIcon}`;
+
                 document.getElementById("weather-today").innerHTML = `
                     ${dateStr} <br> 
-                    <img src="icons/${weatherIcon}" class="weather-symbol"><br>
-                    🌡 ${todayTempMax}°C / ${todayTempMaxF}°F
+                    ${todayTempMax}°C / ${todayTempMaxF}°F
                 `;
                 document.getElementById("weather-tomorrow").innerHTML = `
                     Tomorrow <br>
-                    🌡 ${tomorrowTempMax}°C / ${(tomorrowTempMax * 9/5 + 32).toFixed(1)}°F
+                    ${tomorrowTempMax}°C / ${(tomorrowTempMax * 9/5 + 32).toFixed(1)}°F
                 `;
 
-                document.getElementById("precipitation").innerHTML = `☔ Precipitation: ${precipitation} mm`;
-                document.getElementById("uv-index").innerHTML = `🌞 UV Index: ${uvIndex}`;
-                document.getElementById("humidity").innerHTML = `💧 Humidity: ${humidity}%`;
+                document.getElementById("precipitation").innerHTML = `Precipitation: ${precipitation} mm`;
+                document.getElementById("uv-index").innerHTML = `UV Index: ${uvIndex}`;
+                document.getElementById("humidity").innerHTML = `Humidity: ${humidity}%`;
                 document.getElementById("update-time").innerHTML = `Last Updated: ${new Date().toISOString().replace('T', ' ').split('.')[0]}`;
 
                 // Update Chart
