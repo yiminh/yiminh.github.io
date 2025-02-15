@@ -22,73 +22,75 @@
         h1 {
             font-size: 120px;
             margin: 10px 0;
+            height: 8%;
         }
         .weather-container {
-            display: flex;
-            flex-direction: column;
+            display: grid;
             width: 100%;
             max-width: 1680px;
-        }
-        .weather-row {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            margin-bottom: 20px;
+            height: 100%;
+            grid-template-rows: 2fr 3fr 2fr 8fr 1fr;
+            grid-template-columns: 3fr 1fr 3fr 1fr;
+            gap: 10px;
+            padding: 10px;
         }
         .weather-block {
             background: #f5f5f5;
-            padding: 40px;
-            flex: 1;
+            padding: 30px;
             text-align: center;
             font-size: 80px;
             border-radius: 10px;
-            margin: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .weather-symbol {
+        .weather-icon {
             width: 350px;
             height: 350px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .chart-container {
-            width: 70%;
-            height: 800px;
+            grid-column: span 4;
+            width: 100%;
+            height: 100%;
             background: #ddd;
             padding: 10px;
             border-radius: 10px;
         }
         .update-time {
+            grid-column: span 4;
             font-size: 50px;
-            margin-top: 30px;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
     <h1>State College</h1>
 
-    <!-- Weather Today + Tomorrow -->
-    <div class="weather-row">
+    <div class="weather-container">
+        <!-- Today & Tomorrow Weather Blocks -->
         <div class="weather-block" id="weather-today"></div>
+        <div class="weather-icon"><img id="weather-icon-today" src="" width="250"></div>
         <div class="weather-block" id="weather-tomorrow"></div>
-    </div>
+        <div class="weather-icon"><img id="weather-icon-tomorrow" src="" width="250"></div>
 
-    <!-- Today's Weather Icon -->
-    <div id="weather-icon-container">
-        <img id="weather-icon" class="weather-symbol" src="" alt="Weather Icon">
-    </div>
+        <!-- Weather Info Blocks -->
+        <div class="weather-block" id="precipitation"></div>
+        <div class="weather-block" id="uv-index"></div>
+        <div class="weather-block" id="humidity"></div>
 
-    <!-- Other Info + Giant Chart -->
-    <div class="weather-row">
-        <div style="width: 30%; text-align: left; font-size: 60px;">
-            <p id="precipitation"></p>
-            <p id="uv-index"></p>
-            <p id="humidity"></p>
-        </div>
+        <!-- Chart (Huge) -->
         <div class="chart-container">
             <canvas id="weatherChart"></canvas>
         </div>
-    </div>
 
-    <!-- Last Updated -->
-    <div class="update-time" id="update-time"></div>
+        <!-- Last Updated -->
+        <div class="update-time" id="update-time"></div>
+    </div>
 
     <script>
         async function fetchWeather() {
@@ -117,26 +119,33 @@
                 const precipitation = data.daily.precipitation_sum[0];
                 const uvIndex = data.daily.uv_index_max[0];
                 const humidity = Math.round(Math.random() * 50 + 30); // Mock humidity (not available in API)
-                const weatherCode = data.daily.weathercode[0];
+                const todayWeatherCode = data.daily.weathercode[0];
+                const tomorrowWeatherCode = data.daily.weathercode[1];
 
-                // Convert Celsius to Fahrenheit
-                const todayTempMaxF = (todayTempMax * 9/5 + 32).toFixed(1);
-                const todayTempMinF = (todayTempMin * 9/5 + 32).toFixed(1);
+                // Weather Icons
+                const weatherIcons = {
+                    "clear.png": [0],
+                    "cloud.png": [1, 2, 3],
+                    "fog.png": [45, 48],
+                    "drizzle.png": [51, 53, 55],
+                    "rain.png": [61, 63, 65],
+                    "snow.png": [71, 73, 75, 77],
+                    "storm.png": [95, 96, 99]
+                };
 
-                // Set Weather Icon (only for today)
-                let weatherIcon = "clear.png"; // Default
-                if (weatherCode >= 1 && weatherCode <= 3) weatherIcon = "cloud.png";
-                if (weatherCode >= 45 && weatherCode <= 48) weatherIcon = "fog.png";
-                if (weatherCode >= 51 && weatherCode <= 55) weatherIcon = "drizzle.png";
-                if (weatherCode >= 61 && weatherCode <= 65) weatherIcon = "rain.png";
-                if (weatherCode >= 71 && weatherCode <= 75) weatherIcon = "snow.png";
-                if (weatherCode >= 95) weatherIcon = "storm.png";
+                function getWeatherIcon(code) {
+                    for (const [icon, codes] of Object.entries(weatherIcons)) {
+                        if (codes.includes(code)) return `icons/${icon}`;
+                    }
+                    return "icons/clear.png";
+                }
 
-                document.getElementById("weather-icon").src = `icons/${weatherIcon}`;
+                document.getElementById("weather-icon-today").src = getWeatherIcon(todayWeatherCode);
+                document.getElementById("weather-icon-tomorrow").src = getWeatherIcon(tomorrowWeatherCode);
 
                 document.getElementById("weather-today").innerHTML = `
                     ${dateStr} <br> 
-                    ${todayTempMax}°C / ${todayTempMaxF}°F
+                    ${todayTempMax}°C / ${(todayTempMax * 9/5 + 32).toFixed(1)}°F
                 `;
                 document.getElementById("weather-tomorrow").innerHTML = `
                     Tomorrow <br>
@@ -148,7 +157,6 @@
                 document.getElementById("humidity").innerHTML = `Humidity: ${humidity}%`;
                 document.getElementById("update-time").innerHTML = `Last Updated: ${new Date().toISOString().replace('T', ' ').split('.')[0]}`;
 
-                // Update Chart
                 updateChart(data.hourly.temperature_2m, data.hourly.precipitation_probability);
             } catch (error) {
                 console.error("Error fetching weather data:", error);
@@ -156,39 +164,15 @@
         }
 
         function updateChart(temperatureData, precipitationData) {
-            const ctx = document.getElementById('weatherChart').getContext('2d');
-
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+            new Chart(document.getElementById("weatherChart"), {
+                type: "bar",
+                data: { labels: Array.from({length: 24}, (_, i) => `${i}:00`),
                     datasets: [
-                        {
-                            label: "Temperature (°C)",
-                            type: "line",
-                            yAxisID: "temperature-axis",
-                            data: temperatureData.slice(0, 24),
-                            borderColor: "blue",
-                            borderWidth: 5,
-                            pointRadius: 6,
-                            fill: false
-                        },
-                        {
-                            label: "Rain Probability (%)",
-                            type: "bar",
-                            yAxisID: "rain-axis",
-                            data: precipitationData.slice(0, 24),
-                            backgroundColor: "gray"
-                        }
+                        { label: "", type: "line", yAxisID: "temp-axis", data: temperatureData.slice(0, 24), borderColor: "blue", borderWidth: 4, fill: false },
+                        { label: "", type: "bar", yAxisID: "rain-axis", data: precipitationData.slice(0, 24), backgroundColor: "gray" }
                     ]
                 },
-                options: {
-                    responsive: false,
-                    scales: {
-                        "temperature-axis": { position: "right", beginAtZero: false },
-                        "rain-axis": { position: "left", beginAtZero: true }
-                    }
-                }
+                options: { responsive: false, scales: { "temp-axis": { position: "right" }, "rain-axis": { position: "left" } } }
             });
         }
 
