@@ -18,34 +18,49 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            transform: scale(0.8); /* 80% size */
+            transform: scale(0.75);
             transform-origin: top left;
         }
+
         h1 {
             font-size: 48px;
             margin: 8px 0;
             height: 8%;
         }
+
         .weather-container {
             display: grid;
             width: 100%;
             max-width: 1650px;
             height: 100%;
             grid-template-rows: 2fr 3fr 2fr 8fr 1fr;
-            grid-template-columns: 3fr 1fr 3fr 1fr;
             gap: 8px;
             padding: 8px;
         }
+
+        .row-2 {
+            display: grid;
+            grid-template-columns: 3fr 1fr 3fr 1fr;
+            gap: 8px;
+        }
+
+        .row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+        }
+
         .weather-block {
             background: #f5f5f5;
             padding: 12px;
             text-align: center;
-            font-size: 32px;
+            font-size: 48px;
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
+
         .weather-icon {
             width: 200px;
             height: 200px;
@@ -55,20 +70,21 @@
             align-items: center;
             justify-content: center;
         }
+
         .chart-container {
-            grid-column: span 4;
             width: 100%;
             height: 100%;
             background: #ddd;
             padding: 8px;
             border-radius: 8px;
         }
+
         canvas {
             width: 100% !important;
             height: 100% !important;
         }
+
         .update-time {
-            grid-column: span 4;
             font-size: 24px;
             margin-top: 8px;
         }
@@ -78,14 +94,18 @@
     <h1>State College</h1>
 
     <div class="weather-container">
-        <div class="weather-block" id="weather-today"></div>
-        <div class="weather-icon"><img id="weather-icon-today" src="" width="160"></div>
-        <div class="weather-block" id="weather-tomorrow"></div>
-        <div class="weather-icon"><img id="weather-icon-tomorrow" src="" width="160"></div>
+        <div class="row-2">
+            <div class="weather-block" id="weather-today"></div>
+            <div class="weather-icon"><img id="weather-icon-today" src="" width="160"></div>
+            <div class="weather-block" id="weather-tomorrow"></div>
+            <div class="weather-icon"><img id="weather-icon-tomorrow" src="" width="160"></div>
+        </div>
 
-        <div class="weather-block" id="precipitation"></div>
-        <div class="weather-block" id="uv-index"></div>
-        <div class="weather-block" id="humidity"></div>
+        <div class="row-3">
+            <div class="weather-block" id="precipitation"></div>
+            <div class="weather-block" id="uv-index"></div>
+            <div class="weather-block" id="humidity"></div>
+        </div>
 
         <div class="chart-container">
             <canvas id="weatherChart"></canvas>
@@ -97,75 +117,75 @@
     <script>
         async function fetchWeather() {
             console.log("Fetching weather data...");
-            const url = "https://api.open-meteo.com/v1/forecast?latitude=40.7934&longitude=-77.8600&hourly=temperature_2m,precipitation_probability&daily=precipitation_sum,temperature_2m_max,temperature_2m_min,uv_index_max,weathercode&timezone=America/New_York";
-            
+            const url = "https://api.open-meteo.com/v1/forecast?latitude=40.7934&longitude=-77.86&current=temperature_2m,relative_humidity_2m,is_day,precipitation,rain,showers,snowfall,weather_code&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,rain,showers,snowfall,snow_depth,weather_code,visibility&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours&timezone=America/New_York";
+
             try {
                 const response = await fetch(url);
                 const data = await response.json();
                 console.log("API Response Data:", data);
 
-                if (!data.daily || !data.hourly) {
+                if (!data.current || !data.daily || !data.hourly) {
                     console.error("Unexpected API response format", data);
                     return;
                 }
 
-                const today = new Date();
-                const dateStr = today.toISOString().split("T")[0].replace(/-/g, ".");
+                const now = new Date();
+                const formattedDate = now.toLocaleDateString("en-US", { month: "short", day: "numeric", weekday: "short" })
+                    .replace(/^(\w+) (\d+), (\w+)$/, "$2 $1 ($3)");
 
-                const todayTempMax = data.daily.temperature_2m_max[0].toFixed(1);
-                const todayTempMin = data.daily.temperature_2m_min[0].toFixed(1);
+                const currentHour = now.getHours();
+                const startIndex = data.hourly.time.findIndex(t => t.includes(`T${currentHour.toString().padStart(2, "0")}:00`));
+
+                const next24Temp = data.hourly.temperature_2m.slice(startIndex, startIndex + 24);
+                const next24Precip = data.hourly.precipitation_probability.slice(startIndex, startIndex + 24);
+                const next24Hours = Array.from({ length: 24 }, (_, i) => (currentHour + i) % 24);
+
+                const currentTemp = data.current.temperature_2m.toFixed(1);
+                const humidity = data.current.relative_humidity_2m;
+                const todayWeatherCode = data.current.weather_code;
+
                 const tomorrowTempMax = data.daily.temperature_2m_max[1].toFixed(1);
                 const tomorrowTempMin = data.daily.temperature_2m_min[1].toFixed(1);
-                const precipitation = data.daily.precipitation_sum[0];
-                const uvIndex = data.daily.uv_index_max[0];
-                const humidity = Math.round(Math.random() * 50 + 30);
-                const todayWeatherCode = data.daily.weathercode[0];
-                const tomorrowWeatherCode = data.daily.weathercode[1];
+                const tomorrowWeatherCode = data.daily.weather_code[1];
 
                 document.getElementById("weather-icon-today").src = `icons/${todayWeatherCode}.png`;
                 document.getElementById("weather-icon-tomorrow").src = `icons/${tomorrowWeatherCode}.png`;
 
-                document.getElementById("weather-today").innerHTML = `
-                    ${dateStr} <br> 
-                    ${todayTempMax}°C / ${(todayTempMax * 9/5 + 32).toFixed(1)}°F
-                `;
-                document.getElementById("weather-tomorrow").innerHTML = `
-                    Tomorrow <br>
-                    ${tomorrowTempMax}°C / ${(tomorrowTempMax * 9/5 + 32).toFixed(1)}°F
-                `;
+                document.getElementById("weather-today").innerHTML = `${formattedDate} <br> ${currentTemp}°C`;
+                document.getElementById("weather-tomorrow").innerHTML = `Tomorrow <br> ${tomorrowTempMax}°C`;
 
-                document.getElementById("precipitation").innerHTML = `Precipitation: ${precipitation} mm`;
-                document.getElementById("uv-index").innerHTML = `UV Index: ${uvIndex}`;
+                document.getElementById("precipitation").innerHTML = `Precipitation: ${data.daily.precipitation_sum[0]} mm`;
+                document.getElementById("uv-index").innerHTML = `UV Index: ${data.daily.uv_index_max[0]}`;
                 document.getElementById("humidity").innerHTML = `Humidity: ${humidity}%`;
                 document.getElementById("update-time").innerHTML = `Last Updated: ${new Date().toISOString().replace('T', ' ').split('.')[0]}`;
 
-                updateChart(data.hourly.temperature_2m, data.hourly.precipitation_probability);
+                updateChart(next24Hours, next24Temp, next24Precip);
             } catch (error) {
                 console.error("Error fetching weather data:", error);
             }
         }
 
-        function updateChart(temperatureData, precipitationData) {
+        function updateChart(hours, temperatureData, precipitationData) {
             const ctx = document.getElementById("weatherChart").getContext("2d");
 
             new Chart(ctx, {
                 type: "bar",
                 data: {
-                    labels: Array.from({ length: 24 }, (_, i) => `${i}`), // Just hour number
+                    labels: hours.map(h => `${h}`),
                     datasets: [
                         {
                             type: "line",
                             yAxisID: "temp-axis",
-                            data: temperatureData.slice(0, 24),
+                            data: temperatureData,
                             borderColor: "blue",
-                            borderWidth: 4,
+                            borderWidth: 5,
                             fill: false,
-                            pointRadius: 4
+                            pointRadius: 6
                         },
                         {
                             type: "bar",
                             yAxisID: "rain-axis",
-                            data: precipitationData.slice(0, 24),
+                            data: precipitationData,
                             backgroundColor: "gray"
                         }
                     ]
@@ -174,12 +194,12 @@
                     responsive: false,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false } // Legend completely removed
+                        legend: { display: false }
                     },
                     scales: {
-                        x: { ticks: { font: { size: 24 } } }, // Bigger x-axis labels
-                        "temp-axis": { position: "right", beginAtZero: false, ticks: { font: { size: 24 } } },
-                        "rain-axis": { position: "left", beginAtZero: true, ticks: { font: { size: 24 } } }
+                        x: { ticks: { font: { size: 30 } } },
+                        "rain-axis": { position: "left", beginAtZero: true, ticks: { font: { size: 36 } } },
+                        "temp-axis": { position: "right", beginAtZero: false, ticks: { font: { size: 36 } } }
                     }
                 }
             });
