@@ -159,7 +159,7 @@
                 } else if (snowSum > 0 && rainSum == 0) {
                     precipitationText = `Snow: ${snowSum} cm`;
                 } else if (rainSum > 0 && snowSum > 0) {
-                    precipitationText = `S: ${snowSum} cm; R: ${rainSum} cm`;
+                    precipitationText = `Mix: ${snowSum} / ${rainSum} cm`;
                 }
 
                 document.getElementById("precipitation").innerHTML = precipitationText;
