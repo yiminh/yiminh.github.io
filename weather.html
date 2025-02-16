@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1344, height=1011, initial-scale=1.0">
+    <meta http-equiv="refresh" content="1800">
     <title>State College</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -156,7 +157,7 @@
                 let precipitationText = "Snow/Rain: 0 cm";
 
                 if (rainSum > 0 && snowSum == 0) {
-                    precipitationText = `Rain: ${rainSum} mm`;
+                    precipitationText = `Rain: ${rainSum} cm`;
                 } else if (snowSum > 0 && rainSum == 0) {
                     precipitationText = `Snow: ${snowSum} cm`;
                 } else if (rainSum > 0 && snowSum > 0) {
