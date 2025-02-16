@@ -7,7 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: "Times New Roman", Times, serif;
             background-color: #FFFFFF;
             color: #000000;
             text-align: center;
@@ -130,34 +130,44 @@
                 }
 
                 const now = new Date();
-                const formattedDate = now.toLocaleDateString("en-US", { month: "short", day: "numeric", weekday: "short" })
-                    .replace(/^(\w+) (\d+), (\w+)$/, "$2 $1 ($3)");
+                const formattedDate = now.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                const weekday = now.toLocaleDateString("en-US", { weekday: "short" });
+                const todayDateFormatted = `${formattedDate} (${weekday})`;
 
-                const currentHour = now.getHours();
-                const startIndex = data.hourly.time.findIndex(t => t.includes(`T${currentHour.toString().padStart(2, "0")}:00`));
-
-                const next24Temp = data.hourly.temperature_2m.slice(startIndex, startIndex + 24);
-                const next24Precip = data.hourly.precipitation_probability.slice(startIndex, startIndex + 24);
-                const next24Hours = Array.from({ length: 24 }, (_, i) => (currentHour + i) % 24);
-
-                const currentTemp = data.current.temperature_2m.toFixed(1);
-                const humidity = data.current.relative_humidity_2m;
+                const currentTempC = data.current.temperature_2m.toFixed(1);
+                const currentTempF = ((currentTempC * 9/5) + 32).toFixed(1);
                 const todayWeatherCode = data.current.weather_code;
 
-                const tomorrowTempMax = data.daily.temperature_2m_max[1].toFixed(1);
-                const tomorrowTempMin = data.daily.temperature_2m_min[1].toFixed(1);
+                const tomorrowTempMaxC = data.daily.temperature_2m_max[1].toFixed(1);
+                const tomorrowTempMaxF = ((tomorrowTempMaxC * 9/5) + 32).toFixed(1);
                 const tomorrowWeatherCode = data.daily.weather_code[1];
 
                 document.getElementById("weather-icon-today").src = `icons/${todayWeatherCode}.png`;
                 document.getElementById("weather-icon-tomorrow").src = `icons/${tomorrowWeatherCode}.png`;
 
-                document.getElementById("weather-today").innerHTML = `${formattedDate} <br> ${currentTemp}°C`;
-                document.getElementById("weather-tomorrow").innerHTML = `Tomorrow <br> ${tomorrowTempMax}°C`;
+                document.getElementById("weather-today").innerHTML = `${todayDateFormatted} <br> ${currentTempC}°C / ${currentTempF}°F`;
+                document.getElementById("weather-tomorrow").innerHTML = `Tomorrow <br> ${tomorrowTempMaxC}°C / ${tomorrowTempMaxF}°F`;
 
-                document.getElementById("precipitation").innerHTML = `Precipitation: ${data.daily.precipitation_sum[0]} mm`;
+                const rainSum = data.daily.rain_sum[0].toFixed(1);
+                const snowSum = data.daily.snowfall_sum[0].toFixed(1);
+                let precipitationText = "Snow/Rain: 0 cm";
+
+                if (rainSum > 0 && snowSum == 0) {
+                    precipitationText = `Rain: ${rainSum} cm`;
+                } else if (snowSum > 0 && rainSum == 0) {
+                    precipitationText = `Snow: ${snowSum} cm`;
+                } else if (rainSum > 0 && snowSum > 0) {
+                    precipitationText = `Snow/Rain: ${Math.max(rainSum, snowSum)} cm`;
+                }
+
+                document.getElementById("precipitation").innerHTML = precipitationText;
                 document.getElementById("uv-index").innerHTML = `UV Index: ${data.daily.uv_index_max[0]}`;
-                document.getElementById("humidity").innerHTML = `Humidity: ${humidity}%`;
+                document.getElementById("humidity").innerHTML = `Humidity: ${data.current.relative_humidity_2m}%`;
                 document.getElementById("update-time").innerHTML = `Last Updated: ${new Date().toISOString().replace('T', ' ').split('.')[0]}`;
+
+                const next24Temp = data.hourly.temperature_2m.slice(0, 24);
+                const next24Precip = data.hourly.precipitation_probability.slice(0, 24);
+                const next24Hours = Array.from({ length: 24 }, (_, i) => (now.getHours() + i) % 24);
 
                 updateChart(next24Hours, next24Temp, next24Precip);
             } catch (error) {
