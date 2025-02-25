@@ -171,7 +171,7 @@
                 document.getElementById("update-time").innerHTML = `Last Updated: ${localUpdateTime}`;
 
                 const next24Temp = data.hourly.temperature_2m.slice(0, 24);
-                const next24Precip = data.hourly.precipitation_probability.slice(0, 24);
+                const next24Precip = data.hourly.precipitation_probability.slice(0, 24).map(p => p / 100);
                 const next24Hours = Array.from({ length: 24 }, (_, i) => (now.getHours() + i) % 24);
 
                 updateChart(next24Hours, next24Temp, next24Precip);
@@ -213,8 +213,22 @@
                     },
                     scales: {
                         x: { ticks: { font: { size: 30 } } },
-                        "rain-axis": { position: "left", beginAtZero: true, ticks: { font: { size: 36 } } },
-                        "temp-axis": { position: "right", beginAtZero: false, ticks: { font: { size: 36 } } }
+                        "rain-axis": { 
+                            position: "left",
+                            beginAtZero: true,
+                            max: 100,  // Sets max value to 100%
+                            ticks: { 
+                                font: { size: 36 },
+                                callback: function(value) {
+                                    return value + "%";  // Adds % symbol
+                                }
+                            }
+                        },
+                        "temp-axis": { 
+                            position: "right",
+                            beginAtZero: false,
+                            ticks: { font: { size: 36 } }
+                        }
                     }
                 }
             });
